@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'age', 'level', 'goal', 'restrictions', 'notes'])]
 class Trainee extends Model
@@ -15,6 +16,14 @@ class Trainee extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return HasMany<ScheduledTraining, $this>
+     */
+    public function scheduledTrainings(): HasMany
+    {
+        return $this->hasMany(ScheduledTraining::class);
     }
 
     /**

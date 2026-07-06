@@ -49,6 +49,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<ScheduledTraining, $this>
+     */
+    public function scheduledTrainings(): HasMany
+    {
+        return $this->hasMany(ScheduledTraining::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
