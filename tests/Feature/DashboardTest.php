@@ -66,6 +66,7 @@ test('dashboard shows only todays trainings for the current user sorted by start
             ->where('scheduledTrainings.0.subject_type', 'training_group')
             ->where('scheduledTrainings.0.location', 'Зал №1')
             ->where('scheduledTrainings.0.status', 'planned')
+            ->where('scheduledTrainings.0.color', 'blue')
             ->where('scheduledTrainings.1.subject_name', 'Алексей Смирнов')
             ->where('scheduledTrainings.1.subject_type', 'trainee'));
 });
@@ -110,5 +111,6 @@ function dashboardTrainingPayload(array $overrides = []): array
         'ends_at' => Date::parse('2026-07-06 19:00:00'),
         'location' => 'Зал №1',
         'status' => 'planned',
+        'color' => 'blue',
     ], $overrides);
 }

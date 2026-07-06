@@ -1,5 +1,13 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import {
+    BookOpen,
+    CalendarDays,
+    Dumbbell,
+    FolderGit2,
+    LayoutGrid,
+    UserRound,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -13,14 +21,43 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { calendar, dashboard } from '@/routes';
+import { index as exercisesIndex } from '@/routes/exercises';
+import { index as scheduledTrainingsIndex } from '@/routes/scheduled-trainings';
+import { index as traineesIndex } from '@/routes/trainees';
+import { index as trainingGroupsIndex } from '@/routes/training-groups';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Сегодня',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Расписание',
+        href: scheduledTrainingsIndex(),
+        icon: CalendarDays,
+    },
+    {
+        title: 'Календарь',
+        href: calendar(),
+        icon: CalendarDays,
+    },
+    {
+        title: 'Клиенты',
+        href: traineesIndex(),
+        icon: UserRound,
+    },
+    {
+        title: 'Группы',
+        href: trainingGroupsIndex(),
+        icon: Users,
+    },
+    {
+        title: 'Упражнения',
+        href: exercisesIndex(),
+        icon: Dumbbell,
     },
 ];
 

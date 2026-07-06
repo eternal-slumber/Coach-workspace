@@ -1,37 +1,33 @@
-import { Head } from '@inertiajs/react';
-import { Badge } from '@/components/ui/badge';
+import { Head, Link } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
+import ScheduledTrainingColorDot from '@/components/scheduled-training-color-dot';
+import ScheduledTrainingStatusBadge from '@/components/scheduled-training-status-badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { dashboard } from '@/routes';
+import { create as createScheduledTraining } from '@/routes/scheduled-trainings';
+import type { ScheduledTraining } from '@/types';
 
-type ScheduledTrainingStatus = 'planned' | 'completed' | 'cancelled';
-
-type ScheduledTraining = {
-    id: number;
-    starts_at: string;
-    ends_at: string;
-    subject_name: string;
-    subject_type: 'trainee' | 'training_group';
-    location: string;
-    status: ScheduledTrainingStatus;
-};
+type DashboardScheduledTraining = Pick<
+    ScheduledTraining,
+    | 'id'
+    | 'starts_at'
+    | 'ends_at'
+    | 'subject_name'
+    | 'subject_type'
+    | 'location'
+    | 'status'
+    | 'color'
+>;
 
 type DashboardProps = {
-    scheduledTrainings: ScheduledTraining[];
+    scheduledTrainings: DashboardScheduledTraining[];
 };
 
 const timeFormatter = new Intl.DateTimeFormat('ru-RU', {
     hour: '2-digit',
     minute: '2-digit',
 });
-
-const statusStyles: Record<ScheduledTrainingStatus, string> = {
-    planned:
-        'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300',
-    completed:
-        'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300',
-    cancelled:
-        'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300',
-};
 
 function formatTime(dateTime: string): string {
     return timeFormatter.format(new Date(dateTime));
@@ -43,13 +39,21 @@ export default function Dashboard({ scheduledTrainings }: DashboardProps) {
             <Head title="Сегодня" />
 
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <header className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Сегодня
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Запланированные тренировки на текущий день
-                    </p>
+                <header className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="grid gap-1">
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                            Сегодня
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Запланированные тренировки на текущий день
+                        </p>
+                    </div>
+                    <Button asChild>
+                        <Link href={createScheduledTraining()}>
+                            <Plus />
+                            Добавить тренировку
+                        </Link>
+                    </Button>
                 </header>
 
                 {scheduledTrainings.length === 0 ? (
@@ -81,8 +85,17 @@ export default function Dashboard({ scheduledTrainings }: DashboardProps) {
                                         </div>
 
                                         <div className="min-w-0">
-                                            <h2 className="truncate font-medium">
-                                                {scheduledTraining.subject_name}
+                                            <h2 className="flex items-center gap-2 truncate font-medium">
+                                                <ScheduledTrainingColorDot
+                                                    color={
+                                                        scheduledTraining.color
+                                                    }
+                                                />
+                                                <span className="truncate">
+                                                    {
+                                                        scheduledTraining.subject_name
+                                                    }
+                                                </span>
                                             </h2>
                                             <p className="text-sm text-muted-foreground">
                                                 {scheduledTraining.subject_type ===
@@ -94,16 +107,9 @@ export default function Dashboard({ scheduledTrainings }: DashboardProps) {
                                         </div>
                                     </div>
 
-                                    <Badge
-                                        variant="outline"
-                                        className={
-                                            statusStyles[
-                                                scheduledTraining.status
-                                            ]
-                                        }
-                                    >
-                                        Статус: {scheduledTraining.status}
-                                    </Badge>
+                                    <ScheduledTrainingStatusBadge
+                                        status={scheduledTraining.status}
+                                    />
                                 </CardContent>
                             </Card>
                         ))}

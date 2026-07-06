@@ -50,6 +50,8 @@ class StoreScheduledTrainingRequest extends FormRequest
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'location' => ['required', 'string', 'max:255'],
             'status' => ['sometimes', 'required', Rule::in(ScheduledTraining::STATUSES)],
+            'color' => ['sometimes', 'required', Rule::in(ScheduledTraining::COLORS)],
+            'notes' => ['nullable', 'string', 'max:10000'],
         ];
     }
 }

@@ -5,61 +5,163 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreScheduledTrainingRequest;
 use App\Http\Requests\UpdateScheduledTrainingRequest;
 use App\Models\ScheduledTraining;
-use Illuminate\Http\JsonResponse;
+use App\Models\Trainee;
+use App\Models\TrainingGroup;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ScheduledTrainingController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): Response
     {
         Gate::authorize('viewAny', ScheduledTraining::class);
 
-        return response()->json([
-            'scheduled_trainings' => $request->user()
-                ->scheduledTrainings()
-                ->with(['trainee:id,name', 'trainingGroup:id,name'])
-                ->orderBy('starts_at')
-                ->get(),
+        $scheduledTrainings = $request->user()
+            ->scheduledTrainings()
+            ->with(['trainee:id,name', 'trainingGroup:id,name'])
+            ->where('starts_at', '>=', Date::now()->startOfDay())
+            ->orderBy('starts_at')
+            ->get()
+            ->map($this->toPageData(...));
+
+        return Inertia::render('scheduled-trainings/index', [
+            'scheduledTrainings' => $scheduledTrainings,
         ]);
     }
 
-    public function store(StoreScheduledTrainingRequest $request): JsonResponse
+    public function create(Request $request): Response
+    {
+        Gate::authorize('create', ScheduledTraining::class);
+
+        return Inertia::render('scheduled-trainings/create', $this->formOptions($request));
+    }
+
+    public function store(StoreScheduledTrainingRequest $request): RedirectResponse
     {
         $scheduledTraining = $request->user()
             ->scheduledTrainings()
             ->create($request->validated());
 
-        return response()->json($scheduledTraining->load(['trainee:id,name', 'trainingGroup:id,name']), 201);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Training scheduled.')]);
+
+        return to_route('scheduled-trainings.show', $scheduledTraining);
     }
 
-    public function show(ScheduledTraining $scheduledTraining): JsonResponse
+    public function show(ScheduledTraining $scheduledTraining): Response
     {
         Gate::authorize('view', $scheduledTraining);
 
-        return response()->json(
-            $scheduledTraining->load(['trainee:id,name', 'trainingGroup:id,name']),
-        );
+        return Inertia::render('scheduled-trainings/show', [
+            'scheduledTraining' => $this->toPageData(
+                $scheduledTraining->load(['trainee:id,name', 'trainingGroup:id,name']),
+            ),
+        ]);
+    }
+
+    public function edit(Request $request, ScheduledTraining $scheduledTraining): Response
+    {
+        Gate::authorize('update', $scheduledTraining);
+
+        return Inertia::render('scheduled-trainings/edit', [
+            'scheduledTraining' => $this->toPageData(
+                $scheduledTraining->load(['trainee:id,name', 'trainingGroup:id,name']),
+            ),
+            ...$this->formOptions($request),
+        ]);
     }
 
     public function update(
         UpdateScheduledTrainingRequest $request,
         ScheduledTraining $scheduledTraining,
-    ): JsonResponse {
+    ): RedirectResponse {
         $scheduledTraining->update($request->validated());
 
-        return response()->json(
-            $scheduledTraining->load(['trainee:id,name', 'trainingGroup:id,name']),
-        );
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Training updated.')]);
+
+        return to_route('scheduled-trainings.show', $scheduledTraining);
     }
 
-    public function destroy(ScheduledTraining $scheduledTraining): Response
-    {
+    public function destroy(
+        Request $request,
+        ScheduledTraining $scheduledTraining,
+    ): RedirectResponse {
         Gate::authorize('delete', $scheduledTraining);
 
         $scheduledTraining->delete();
 
-        return response()->noContent();
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Training deleted.')]);
+
+        return $request->query('redirect') === 'calendar'
+            ? to_route('calendar')
+            : to_route('scheduled-trainings.index');
+    }
+
+    /**
+     * @return array{
+     *     id: int,
+     *     trainee_id: int|null,
+     *     training_group_id: int|null,
+     *     starts_at: string,
+     *     ends_at: string,
+     *     subject_name: string,
+     *     subject_type: 'trainee'|'training_group',
+     *     location: string,
+     *     status: string,
+     *     color: string,
+     *     notes: string|null
+     * }
+     */
+    private function toPageData(ScheduledTraining $scheduledTraining): array
+    {
+        $isTraineeTraining = $scheduledTraining->trainee_id !== null;
+
+        return [
+            'id' => $scheduledTraining->id,
+            'trainee_id' => $scheduledTraining->trainee_id,
+            'training_group_id' => $scheduledTraining->training_group_id,
+            'starts_at' => $scheduledTraining->starts_at->toIso8601String(),
+            'ends_at' => $scheduledTraining->ends_at->toIso8601String(),
+            'subject_name' => $isTraineeTraining
+                ? $scheduledTraining->trainee->name
+                : $scheduledTraining->trainingGroup->name,
+            'subject_type' => $isTraineeTraining ? 'trainee' : 'training_group',
+            'location' => $scheduledTraining->location,
+            'status' => $scheduledTraining->status,
+            'color' => $scheduledTraining->color,
+            'notes' => $scheduledTraining->notes,
+        ];
+    }
+
+    /**
+     * @return array{
+     *     trainees: Collection<int, array{id: int, name: string}>,
+     *     trainingGroups: Collection<int, array{id: int, name: string}>
+     * }
+     */
+    private function formOptions(Request $request): array
+    {
+        return [
+            'trainees' => $request->user()
+                ->trainees()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (Trainee $trainee): array => [
+                    'id' => $trainee->id,
+                    'name' => $trainee->name,
+                ]),
+            'trainingGroups' => $request->user()
+                ->trainingGroups()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (TrainingGroup $trainingGroup): array => [
+                    'id' => $trainingGroup->id,
+                    'name' => $trainingGroup->name,
+                ]),
+        ];
     }
 }

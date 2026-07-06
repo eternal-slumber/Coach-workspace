@@ -1,3 +1,5 @@
+@import '@dayflow/core/dist/styles.components.css';
+
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
@@ -140,4 +142,14 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+.coach-calendar .df-calendar-container {
+    height: min(760px, calc(100vh - 12rem));
+    min-height: 560px;
+}
+
+.coach-calendar-month .df-calendar-container {
+    height: min(860px, calc(100vh - 8rem));
+    min-height: 640px;
 }

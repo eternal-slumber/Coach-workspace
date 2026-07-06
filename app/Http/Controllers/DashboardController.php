@@ -26,6 +26,7 @@ class DashboardController extends Controller
                 'ends_at',
                 'location',
                 'status',
+                'color',
             ])
             ->with(['trainee:id,name', 'trainingGroup:id,name'])
             ->whereBetween('starts_at', [$today->startOfDay(), $today->endOfDay()])
@@ -46,7 +47,8 @@ class DashboardController extends Controller
      *     subject_name: string,
      *     subject_type: 'trainee'|'training_group',
      *     location: string,
-     *     status: string
+     *     status: string,
+     *     color: string
      * }
      */
     private function toDashboardItem(ScheduledTraining $scheduledTraining): array
@@ -64,6 +66,7 @@ class DashboardController extends Controller
             'subject_type' => $isTraineeTraining ? 'trainee' : 'training_group',
             'location' => $scheduledTraining->location,
             'status' => $scheduledTraining->status,
+            'color' => $scheduledTraining->color,
         ];
     }
 }

@@ -27,6 +27,8 @@ class UpdateScheduledTrainingRequest extends FormRequest
             'ends_at' => $scheduledTraining->ends_at,
             'location' => $scheduledTraining->location,
             'status' => $scheduledTraining->status,
+            'color' => $scheduledTraining->color,
+            'notes' => $scheduledTraining->notes,
         ]);
     }
 
@@ -71,6 +73,8 @@ class UpdateScheduledTrainingRequest extends FormRequest
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'location' => ['required', 'string', 'max:255'],
             'status' => ['required', Rule::in(ScheduledTraining::STATUSES)],
+            'color' => ['required', Rule::in(ScheduledTraining::COLORS)],
+            'notes' => ['nullable', 'string', 'max:10000'],
         ];
     }
 }

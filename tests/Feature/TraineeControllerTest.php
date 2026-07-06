@@ -3,33 +3,16 @@
 use App\Models\Trainee;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
-test('guests cannot access trainees', function () {
-    $this->getJson(route('trainees.index'))->assertUnauthorized();
+test('guests cannot access trainee pages', function () {
+    $this->get(route('trainees.index'))->assertRedirect(route('login'));
+    $this->get(route('trainees.create'))->assertRedirect(route('login'));
 });
 
-test('a user can create a trainee owned by themselves', function () {
-    $user = User::factory()->create();
-    $otherUser = User::factory()->create();
-
-    $response = $this->actingAs($user)->postJson(route('trainees.store'), [
-        ...traineePayload(),
-        'user_id' => $otherUser->id,
-    ]);
-
-    $response
-        ->assertCreated()
-        ->assertJsonPath('name', 'Алексей Смирнов')
-        ->assertJsonPath('user_id', $user->id);
-
-    $trainee = Trainee::query()->sole();
-
-    expect($trainee->user->is($user))->toBeTrue();
-});
-
-test('a user sees only their trainees', function () {
+test('a user sees only their trainees in the list', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
 
@@ -37,32 +20,76 @@ test('a user sees only their trainees', function () {
     $otherUser->trainees()->create(traineePayload(['name' => 'Чужой клиент']));
 
     $this->actingAs($user)
-        ->getJson(route('trainees.index'))
+        ->get(route('trainees.index'))
         ->assertOk()
-        ->assertJsonCount(1, 'trainees')
-        ->assertJsonPath('trainees.0.name', 'Свой клиент')
-        ->assertJsonMissing(['name' => 'Чужой клиент']);
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('trainees/index')
+            ->has('trainees', 1)
+            ->where('trainees.0.name', 'Свой клиент'));
 });
 
-test('a user can view update and delete their trainee', function () {
+test('a user can open the create trainee page', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('trainees.create'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('trainees/create'));
+});
+
+test('a user can create a trainee owned by themselves', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+
+    $response = $this->actingAs($user)->post(route('trainees.store'), [
+        ...traineePayload(),
+        'user_id' => $otherUser->id,
+    ]);
+
+    $trainee = Trainee::query()->sole();
+
+    $response->assertRedirect(route('trainees.show', $trainee));
+    expect($trainee->user->is($user))->toBeTrue();
+});
+
+test('a user can view and edit their trainee', function () {
     $user = User::factory()->create();
     $trainee = $user->trainees()->create(traineePayload());
 
     $this->actingAs($user)
-        ->getJson(route('trainees.show', $trainee))
+        ->get(route('trainees.show', $trainee))
         ->assertOk()
-        ->assertJsonPath('id', $trainee->id);
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('trainees/show')
+            ->where('trainee.id', $trainee->id)
+            ->where('trainee.name', 'Алексей Смирнов'));
 
     $this->actingAs($user)
-        ->putJson(route('trainees.update', $trainee), traineePayload(['goal' => 'Новая цель']))
+        ->get(route('trainees.edit', $trainee))
         ->assertOk()
-        ->assertJsonPath('goal', 'Новая цель');
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('trainees/edit')
+            ->where('trainee.id', $trainee->id));
+});
+
+test('a user can update their trainee', function () {
+    $user = User::factory()->create();
+    $trainee = $user->trainees()->create(traineePayload());
+
+    $this->actingAs($user)
+        ->patch(route('trainees.update', $trainee), traineePayload(['goal' => 'Новая цель']))
+        ->assertRedirect(route('trainees.show', $trainee));
 
     expect($trainee->fresh()?->goal)->toBe('Новая цель');
+});
+
+test('a user can delete their trainee', function () {
+    $user = User::factory()->create();
+    $trainee = $user->trainees()->create(traineePayload());
 
     $this->actingAs($user)
-        ->deleteJson(route('trainees.destroy', $trainee))
-        ->assertNoContent();
+        ->delete(route('trainees.destroy', $trainee))
+        ->assertRedirect(route('trainees.index'));
 
     $this->assertModelMissing($trainee);
 });
@@ -73,15 +100,19 @@ test('a user cannot access another users trainee', function () {
     $trainee = $otherUser->trainees()->create(traineePayload());
 
     $this->actingAs($user)
-        ->getJson(route('trainees.show', $trainee))
+        ->get(route('trainees.show', $trainee))
         ->assertNotFound();
 
     $this->actingAs($user)
-        ->putJson(route('trainees.update', $trainee), traineePayload(['name' => 'Взлом']))
+        ->get(route('trainees.edit', $trainee))
+        ->assertNotFound();
+
+    $this->actingAs($user)
+        ->patch(route('trainees.update', $trainee), traineePayload(['name' => 'Взлом']))
         ->assertForbidden();
 
     $this->actingAs($user)
-        ->deleteJson(route('trainees.destroy', $trainee))
+        ->delete(route('trainees.destroy', $trainee))
         ->assertNotFound();
 
     expect($trainee->fresh()?->name)->toBe('Алексей Смирнов');
@@ -91,9 +122,8 @@ test('trainee data is validated', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)
-        ->postJson(route('trainees.store'), traineePayload(['name' => '', 'age' => 0]))
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors(['name', 'age']);
+        ->post(route('trainees.store'), traineePayload(['name' => '', 'age' => 0]))
+        ->assertSessionHasErrors(['name', 'age']);
 });
 
 /**

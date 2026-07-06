@@ -57,6 +57,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<Exercise, $this>
+     */
+    public function exercises(): HasMany
+    {
+        return $this->hasMany(Exercise::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

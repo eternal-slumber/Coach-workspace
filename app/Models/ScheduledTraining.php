@@ -16,11 +16,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable $ends_at
  * @property string $location
  * @property string $status
+ * @property string $color
+ * @property string|null $notes
  * @property-read User $user
  * @property-read Trainee|null $trainee
  * @property-read TrainingGroup|null $trainingGroup
  */
-#[Fillable(['trainee_id', 'training_group_id', 'starts_at', 'ends_at', 'location', 'status'])]
+#[Fillable(['trainee_id', 'training_group_id', 'starts_at', 'ends_at', 'location', 'status', 'color', 'notes'])]
 class ScheduledTraining extends Model
 {
     /**
@@ -29,10 +31,16 @@ class ScheduledTraining extends Model
     public const STATUSES = ['planned', 'completed', 'cancelled'];
 
     /**
+     * @var list<string>
+     */
+    public const COLORS = ['blue', 'green', 'orange', 'purple', 'red', 'gray'];
+
+    /**
      * @var array<string, mixed>
      */
     protected $attributes = [
         'status' => 'planned',
+        'color' => 'blue',
     ];
 
     /**

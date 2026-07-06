@@ -3,33 +3,16 @@
 use App\Models\TrainingGroup;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
-test('guests cannot access training groups', function () {
-    $this->getJson(route('training-groups.index'))->assertUnauthorized();
+test('guests cannot access training group pages', function () {
+    $this->get(route('training-groups.index'))->assertRedirect(route('login'));
+    $this->get(route('training-groups.create'))->assertRedirect(route('login'));
 });
 
-test('a user can create a training group owned by themselves', function () {
-    $user = User::factory()->create();
-    $otherUser = User::factory()->create();
-
-    $response = $this->actingAs($user)->postJson(route('training-groups.store'), [
-        ...trainingGroupPayload(),
-        'user_id' => $otherUser->id,
-    ]);
-
-    $response
-        ->assertCreated()
-        ->assertJsonPath('name', 'Группа U12')
-        ->assertJsonPath('user_id', $user->id);
-
-    $trainingGroup = TrainingGroup::query()->sole();
-
-    expect($trainingGroup->user->is($user))->toBeTrue();
-});
-
-test('a user sees only their training groups', function () {
+test('a user sees only their training groups in the list', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
 
@@ -37,33 +20,79 @@ test('a user sees only their training groups', function () {
     $otherUser->trainingGroups()->create(trainingGroupPayload(['name' => 'Чужая группа']));
 
     $this->actingAs($user)
-        ->getJson(route('training-groups.index'))
+        ->get(route('training-groups.index'))
         ->assertOk()
-        ->assertJsonCount(1, 'training_groups')
-        ->assertJsonPath('training_groups.0.name', 'Своя группа')
-        ->assertJsonMissing(['name' => 'Чужая группа']);
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('training-groups/index')
+            ->has('trainingGroups', 1)
+            ->where('trainingGroups.0.name', 'Своя группа'));
 });
 
-test('a user can view update and delete their training group', function () {
+test('a user can open the create training group page', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('training-groups.create'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('training-groups/create'));
+});
+
+test('a user can create a training group owned by themselves', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+
+    $response = $this->actingAs($user)->post(route('training-groups.store'), [
+        ...trainingGroupPayload(),
+        'user_id' => $otherUser->id,
+    ]);
+
+    $trainingGroup = TrainingGroup::query()->sole();
+
+    $response->assertRedirect(route('training-groups.show', $trainingGroup));
+    expect($trainingGroup->user->is($user))->toBeTrue();
+});
+
+test('a user can view and edit their training group', function () {
     $user = User::factory()->create();
     $trainingGroup = $user->trainingGroups()->create(trainingGroupPayload());
 
     $this->actingAs($user)
-        ->getJson(route('training-groups.show', $trainingGroup))
+        ->get(route('training-groups.show', $trainingGroup))
         ->assertOk()
-        ->assertJsonPath('id', $trainingGroup->id);
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('training-groups/show')
+            ->where('trainingGroup.id', $trainingGroup->id)
+            ->where('trainingGroup.name', 'Группа U12'));
 
     $this->actingAs($user)
-        ->putJson(
+        ->get(route('training-groups.edit', $trainingGroup))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('training-groups/edit')
+            ->where('trainingGroup.id', $trainingGroup->id));
+});
+
+test('a user can update their training group', function () {
+    $user = User::factory()->create();
+    $trainingGroup = $user->trainingGroups()->create(trainingGroupPayload());
+
+    $this->actingAs($user)
+        ->patch(
             route('training-groups.update', $trainingGroup),
             trainingGroupPayload(['goal' => 'Новая цель группы']),
         )
-        ->assertOk()
-        ->assertJsonPath('goal', 'Новая цель группы');
+        ->assertRedirect(route('training-groups.show', $trainingGroup));
+
+    expect($trainingGroup->fresh()?->goal)->toBe('Новая цель группы');
+});
+
+test('a user can delete their training group', function () {
+    $user = User::factory()->create();
+    $trainingGroup = $user->trainingGroups()->create(trainingGroupPayload());
 
     $this->actingAs($user)
-        ->deleteJson(route('training-groups.destroy', $trainingGroup))
-        ->assertNoContent();
+        ->delete(route('training-groups.destroy', $trainingGroup))
+        ->assertRedirect(route('training-groups.index'));
 
     $this->assertModelMissing($trainingGroup);
 });
@@ -74,18 +103,22 @@ test('a user cannot access another users training group', function () {
     $trainingGroup = $otherUser->trainingGroups()->create(trainingGroupPayload());
 
     $this->actingAs($user)
-        ->getJson(route('training-groups.show', $trainingGroup))
+        ->get(route('training-groups.show', $trainingGroup))
         ->assertNotFound();
 
     $this->actingAs($user)
-        ->putJson(
+        ->get(route('training-groups.edit', $trainingGroup))
+        ->assertNotFound();
+
+    $this->actingAs($user)
+        ->patch(
             route('training-groups.update', $trainingGroup),
             trainingGroupPayload(['name' => 'Взлом']),
         )
         ->assertForbidden();
 
     $this->actingAs($user)
-        ->deleteJson(route('training-groups.destroy', $trainingGroup))
+        ->delete(route('training-groups.destroy', $trainingGroup))
         ->assertNotFound();
 
     expect($trainingGroup->fresh()?->name)->toBe('Группа U12');
@@ -95,9 +128,8 @@ test('training group data is validated', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)
-        ->postJson(route('training-groups.store'), trainingGroupPayload(['sport_type' => '']))
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors('sport_type');
+        ->post(route('training-groups.store'), trainingGroupPayload(['sport_type' => '']))
+        ->assertSessionHasErrors('sport_type');
 });
 
 /**
