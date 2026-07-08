@@ -49,9 +49,7 @@ class UpdateExerciseRequest extends FormRequest
         ]);
     }
 
-    /**
-     * @return list<string>
-     */
+    /** @return list<mixed> */
     private function parseTags(mixed $tags): array
     {
         if (is_array($tags)) {
