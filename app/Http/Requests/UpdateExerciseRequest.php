@@ -53,18 +53,18 @@ class UpdateExerciseRequest extends FormRequest
     private function parseTags(mixed $tags): array
     {
         if (is_array($tags)) {
-            return $tags;
+            return array_values($tags);
         }
 
         if (! is_string($tags)) {
             return [];
         }
 
-        return collect(explode(',', $tags))
+        return array_values(collect(explode(',', $tags))
             ->map(fn (string $tag): string => trim($tag))
             ->filter()
             ->unique()
             ->values()
-            ->all();
+            ->all());
     }
 }
