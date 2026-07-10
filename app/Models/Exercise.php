@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'name',
@@ -16,6 +17,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'difficulty',
     'equipment',
     'duration_minutes',
+    'muscle_groups',
+    'load_type',
+    'movement_pattern',
     'contraindications',
     'age_min',
     'age_max',
@@ -26,12 +30,44 @@ class Exercise extends Model
     /** @use HasFactory<ExerciseFactory> */
     use HasFactory;
 
+    /** @var list<string> */
+    public const LOAD_TYPES = [
+        'warmup',
+        'strength',
+        'mobility',
+        'coordination',
+        'cardio',
+        'recovery',
+        'game',
+    ];
+
+    /** @var list<string> */
+    public const MOVEMENT_PATTERNS = [
+        'squat',
+        'lunge',
+        'hinge',
+        'push',
+        'pull',
+        'core',
+        'balance',
+        'run',
+        'jump',
+        'stretch',
+        'breathing',
+    ];
+
     /**
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** @return HasMany<TrainingPlanExercise, $this> */
+    public function trainingPlanExercises(): HasMany
+    {
+        return $this->hasMany(TrainingPlanExercise::class);
     }
 
     /**
@@ -59,6 +95,7 @@ class Exercise extends Model
             'age_min' => 'integer',
             'age_max' => 'integer',
             'tags' => 'array',
+            'muscle_groups' => 'array',
             'is_system' => 'boolean',
         ];
     }

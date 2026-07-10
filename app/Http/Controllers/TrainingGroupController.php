@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTrainingGroupRequest;
 use App\Http\Requests\UpdateTrainingGroupRequest;
 use App\Models\TrainingGroup;
+use App\Models\TrainingPlan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -57,6 +59,14 @@ class TrainingGroupController extends Controller
                 'restrictions',
                 'notes',
             ]),
+            'trainingHistory' => $this->trainingHistory($trainingGroup),
+            'agentMemories' => $trainingGroup->agentMemories()
+                ->where('user_id', $trainingGroup->user_id)
+                ->select(['id', 'type', 'content', 'importance', 'is_active'])
+                ->orderByDesc('is_active')
+                ->orderByDesc('importance')
+                ->latest()
+                ->get(),
         ]);
     }
 
@@ -96,5 +106,40 @@ class TrainingGroupController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Training group deleted.')]);
 
         return to_route('training-groups.index');
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    private function trainingHistory(TrainingGroup $trainingGroup): Collection
+    {
+        return $trainingGroup->trainingPlans()
+            ->completed()
+            ->latestScheduled()
+            ->with([
+                'scheduledTraining:id,starts_at',
+                'trainingNote:id,training_plan_id,intensity,result,tags,note',
+            ])
+            ->limit(10)
+            ->get([
+                'id',
+                'scheduled_training_id',
+                'title',
+                'goal',
+                'total_duration_minutes',
+                'status',
+            ])
+            ->map(fn (TrainingPlan $trainingPlan): array => [
+                'id' => $trainingPlan->id,
+                'title' => $trainingPlan->title,
+                'goal' => $trainingPlan->goal,
+                'total_duration_minutes' => $trainingPlan->total_duration_minutes,
+                'status' => $trainingPlan->status,
+                'starts_at' => $trainingPlan->scheduledTraining->starts_at->toIso8601String(),
+                'training_note' => $trainingPlan->trainingNote?->only([
+                    'intensity',
+                    'result',
+                    'tags',
+                    'note',
+                ]),
+            ]);
     }
 }

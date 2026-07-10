@@ -2,9 +2,10 @@ import { Link } from '@inertiajs/react';
 import {
     BookOpen,
     CalendarDays,
+    ClipboardList,
     Dumbbell,
     FolderGit2,
-    LayoutGrid,
+    Home,
     UserRound,
     Users,
 } from 'lucide-react';
@@ -23,21 +24,16 @@ import {
 } from '@/components/ui/sidebar';
 import { calendar, dashboard } from '@/routes';
 import { index as exercisesIndex } from '@/routes/exercises';
-import { index as scheduledTrainingsIndex } from '@/routes/scheduled-trainings';
 import { index as traineesIndex } from '@/routes/trainees';
 import { index as trainingGroupsIndex } from '@/routes/training-groups';
+import { index as trainingPlansIndex } from '@/routes/training-plans';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Сегодня',
+        title: 'Обзор',
         href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Расписание',
-        href: scheduledTrainingsIndex(),
-        icon: CalendarDays,
+        icon: Home,
     },
     {
         title: 'Календарь',
@@ -58,6 +54,11 @@ const mainNavItems: NavItem[] = [
         title: 'Упражнения',
         href: exercisesIndex(),
         icon: Dumbbell,
+    },
+    {
+        title: 'Планы тренировок',
+        href: trainingPlansIndex(),
+        icon: ClipboardList,
     },
 ];
 

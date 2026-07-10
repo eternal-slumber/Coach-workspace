@@ -53,6 +53,11 @@ class ScheduledTrainingPolicy
         return $this->owns($user, $scheduledTraining);
     }
 
+    public function generateTrainingPlan(User $user, ScheduledTraining $scheduledTraining): Response
+    {
+        return $this->owns($user, $scheduledTraining);
+    }
+
     private function owns(User $user, ScheduledTraining $scheduledTraining): Response
     {
         return $scheduledTraining->user_id === $user->id

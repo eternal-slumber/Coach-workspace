@@ -26,6 +26,24 @@ class Trainee extends Model
         return $this->hasMany(ScheduledTraining::class);
     }
 
+    /** @return HasMany<TrainingPlan, $this> */
+    public function trainingPlans(): HasMany
+    {
+        return $this->hasMany(TrainingPlan::class);
+    }
+
+    /** @return HasMany<TrainingNote, $this> */
+    public function trainingNotes(): HasMany
+    {
+        return $this->hasMany(TrainingNote::class);
+    }
+
+    /** @return HasMany<AgentMemory, $this> */
+    public function agentMemories(): HasMany
+    {
+        return $this->hasMany(AgentMemory::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

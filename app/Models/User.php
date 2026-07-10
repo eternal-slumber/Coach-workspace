@@ -18,6 +18,8 @@ use Illuminate\Support\Carbon;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
+ * @property string $working_day_starts_at
+ * @property string $working_day_ends_at
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -25,12 +27,18 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'working_day_starts_at', 'working_day_ends_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /** @var array<string, string> */
+    protected $attributes = [
+        'working_day_starts_at' => '08:00:00',
+        'working_day_ends_at' => '22:00:00',
+    ];
 
     /**
      * @return HasMany<Trainee, $this>
@@ -62,6 +70,30 @@ class User extends Authenticatable
     public function exercises(): HasMany
     {
         return $this->hasMany(Exercise::class);
+    }
+
+    /** @return HasMany<TrainingPlan, $this> */
+    public function trainingPlans(): HasMany
+    {
+        return $this->hasMany(TrainingPlan::class);
+    }
+
+    /** @return HasMany<TrainingNote, $this> */
+    public function trainingNotes(): HasMany
+    {
+        return $this->hasMany(TrainingNote::class);
+    }
+
+    /** @return HasMany<AgentMemory, $this> */
+    public function agentMemories(): HasMany
+    {
+        return $this->hasMany(AgentMemory::class);
+    }
+
+    /** @return HasMany<AiRequestLog, $this> */
+    public function aiRequestLogs(): HasMany
+    {
+        return $this->hasMany(AiRequestLog::class);
     }
 
     /**

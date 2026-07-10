@@ -104,6 +104,72 @@ export default function ExerciseForm({
                             <InputError message={errors.duration_minutes} />
                         </div>
 
+                        <div className="grid gap-2 sm:col-span-2">
+                            <Label htmlFor="muscle_groups">Группы мышц</Label>
+                            <Input
+                                id="muscle_groups"
+                                name="muscle_groups"
+                                defaultValue={
+                                    exercise?.muscle_groups.join(', ') ?? ''
+                                }
+                                placeholder="legs, glutes, core"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Разделяйте группы мышц запятыми.
+                            </p>
+                            <InputError message={errors.muscle_groups} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="load_type">Тип нагрузки</Label>
+                            <select
+                                id="load_type"
+                                name="load_type"
+                                className={selectClassName}
+                                defaultValue={exercise?.load_type ?? ''}
+                            >
+                                <option value="">Не указан</option>
+                                <option value="warmup">Разминка</option>
+                                <option value="strength">Сила</option>
+                                <option value="mobility">Мобильность</option>
+                                <option value="coordination">
+                                    Координация
+                                </option>
+                                <option value="cardio">Кардио</option>
+                                <option value="recovery">Восстановление</option>
+                                <option value="game">Игровая нагрузка</option>
+                            </select>
+                            <InputError message={errors.load_type} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="movement_pattern">
+                                Двигательный паттерн
+                            </Label>
+                            <select
+                                id="movement_pattern"
+                                name="movement_pattern"
+                                className={selectClassName}
+                                defaultValue={exercise?.movement_pattern ?? ''}
+                            >
+                                <option value="">Не указан</option>
+                                <option value="squat">Приседание</option>
+                                <option value="lunge">Выпад</option>
+                                <option value="hinge">Тазовый наклон</option>
+                                <option value="push">Жим</option>
+                                <option value="pull">Тяга</option>
+                                <option value="core">
+                                    Стабилизация корпуса
+                                </option>
+                                <option value="balance">Баланс</option>
+                                <option value="run">Бег</option>
+                                <option value="jump">Прыжок</option>
+                                <option value="stretch">Растяжка</option>
+                                <option value="breathing">Дыхание</option>
+                            </select>
+                            <InputError message={errors.movement_pattern} />
+                        </div>
+
                         <div className="grid gap-2">
                             <Label htmlFor="age_min">Минимальный возраст</Label>
                             <Input

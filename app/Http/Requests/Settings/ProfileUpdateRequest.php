@@ -17,6 +17,14 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->profileRules($this->user()->id);
+        return [
+            ...$this->profileRules($this->user()->id),
+            'working_day_starts_at' => ['required', 'date_format:H:i'],
+            'working_day_ends_at' => [
+                'required',
+                'date_format:H:i',
+                'after:working_day_starts_at',
+            ],
+        ];
     }
 }

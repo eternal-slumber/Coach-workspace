@@ -15,7 +15,8 @@ class CalendarController extends Controller
     {
         Gate::authorize('viewAny', ScheduledTraining::class);
 
-        $scheduledTrainings = $request->user()
+        $user = $request->user();
+        $scheduledTrainings = $user
             ->scheduledTrainings()
             ->with(['trainee:id,name', 'trainingGroup:id,name'])
             ->orderBy('starts_at')
@@ -26,6 +27,10 @@ class CalendarController extends Controller
 
         return Inertia::render('calendar', [
             'scheduledTrainings' => $scheduledTrainings,
+            'workingHours' => [
+                'startsAt' => substr($user->working_day_starts_at, 0, 5),
+                'endsAt' => substr($user->working_day_ends_at, 0, 5),
+            ],
         ]);
     }
 }

@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -20,6 +23,8 @@ test('profile information can be updated', function () {
         ->patch(route('profile.update'), [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'working_day_starts_at' => '07:30',
+            'working_day_ends_at' => '21:30',
         ]);
 
     $response
@@ -30,6 +35,8 @@ test('profile information can be updated', function () {
 
     expect($user->name)->toBe('Test User');
     expect($user->email)->toBe('test@example.com');
+    expect($user->working_day_starts_at)->toBe('07:30:00');
+    expect($user->working_day_ends_at)->toBe('21:30:00');
     expect($user->email_verified_at)->toBeNull();
 });
 
@@ -41,6 +48,8 @@ test('email verification status is unchanged when the email address is unchanged
         ->patch(route('profile.update'), [
             'name' => 'Test User',
             'email' => $user->email,
+            'working_day_starts_at' => '08:00',
+            'working_day_ends_at' => '22:00',
         ]);
 
     $response
@@ -48,6 +57,25 @@ test('email verification status is unchanged when the email address is unchanged
         ->assertRedirect(route('profile.edit'));
 
     expect($user->refresh()->email_verified_at)->not->toBeNull();
+});
+
+test('working day end must be later than its start', function () {
+    $user = User::factory()->create();
+
+    $this
+        ->actingAs($user)
+        ->from(route('profile.edit'))
+        ->patch(route('profile.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'working_day_starts_at' => '22:00',
+            'working_day_ends_at' => '08:00',
+        ])
+        ->assertSessionHasErrors('working_day_ends_at')
+        ->assertRedirect(route('profile.edit'));
+
+    expect($user->refresh()->working_day_starts_at)->toBe('08:00:00')
+        ->and($user->working_day_ends_at)->toBe('22:00:00');
 });
 
 test('user can delete their account', function () {

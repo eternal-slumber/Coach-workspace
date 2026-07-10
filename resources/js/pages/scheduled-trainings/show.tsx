@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
-import { Pencil } from 'lucide-react';
+import { Form, Head, Link } from '@inertiajs/react';
+import { ClipboardList, LoaderCircle, Pencil, Sparkles } from 'lucide-react';
+import GenerateTrainingPlanController from '@/actions/App/Http/Controllers/GenerateTrainingPlanController';
 import ScheduledTrainingController from '@/actions/App/Http/Controllers/ScheduledTrainingController';
 import ResourceDeleteDialog from '@/components/resource-delete-dialog';
 import ScheduledTrainingColorDot from '@/components/scheduled-training-color-dot';
@@ -8,6 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { getScheduledTrainingColor } from '@/lib/scheduled-training-colors';
 import { edit, index } from '@/routes/scheduled-trainings';
+import {
+    create as createTrainingPlan,
+    show as showTrainingPlan,
+} from '@/routes/training-plans';
 import type { ScheduledTraining } from '@/types';
 
 type ScheduledTrainingsShowProps = {
@@ -109,6 +114,70 @@ export default function ScheduledTrainingsShow({
                                 </dd>
                             </div>
                         </dl>
+                    </CardContent>
+                </Card>
+
+                <Card className="max-w-3xl">
+                    <CardContent className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="grid gap-1">
+                            <h2 className="font-semibold">План тренировки</h2>
+                            <p className="text-sm text-muted-foreground">
+                                {scheduledTraining.training_plan
+                                    ? `${scheduledTraining.training_plan.title} · ${scheduledTraining.training_plan.status}`
+                                    : 'План для этой тренировки ещё не создан'}
+                            </p>
+                        </div>
+                        {scheduledTraining.training_plan ? (
+                            <Button asChild>
+                                <Link
+                                    href={showTrainingPlan(
+                                        scheduledTraining.training_plan,
+                                    )}
+                                >
+                                    <ClipboardList />
+                                    Открыть план
+                                </Link>
+                            </Button>
+                        ) : (
+                            <div className="flex flex-wrap gap-3">
+                                <Button variant="outline" asChild>
+                                    <Link
+                                        href={createTrainingPlan({
+                                            query: {
+                                                scheduled_training:
+                                                    scheduledTraining.id,
+                                            },
+                                        })}
+                                    >
+                                        <ClipboardList />
+                                        Создать вручную
+                                    </Link>
+                                </Button>
+                                <Form
+                                    {...GenerateTrainingPlanController.form(
+                                        scheduledTraining,
+                                    )}
+                                    disableWhileProcessing
+                                >
+                                    {({ processing }) => (
+                                        <Button
+                                            type="submit"
+                                            disabled={processing}
+                                            aria-busy={processing}
+                                        >
+                                            {processing ? (
+                                                <LoaderCircle className="animate-spin" />
+                                            ) : (
+                                                <Sparkles />
+                                            )}
+                                            {processing
+                                                ? 'Генерация…'
+                                                : 'Сгенерировать AI-план'}
+                                        </Button>
+                                    )}
+                                </Form>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </main>

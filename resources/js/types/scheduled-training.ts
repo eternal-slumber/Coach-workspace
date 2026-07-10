@@ -1,3 +1,5 @@
+import type { TrainingPlanStatus } from './training-plan';
+
 export type ScheduledTrainingStatus = 'planned' | 'completed' | 'cancelled';
 export type ScheduledTrainingColor =
     'blue' | 'green' | 'orange' | 'purple' | 'red' | 'gray';
@@ -14,6 +16,11 @@ export type ScheduledTraining = {
     status: ScheduledTrainingStatus;
     color: ScheduledTrainingColor;
     notes: string | null;
+    training_plan: {
+        id: number;
+        title: string;
+        status: TrainingPlanStatus;
+    } | null;
 };
 
 export type SelectionOption = {

@@ -41,6 +41,13 @@ function ExerciseCard({ exercise }: { exercise: ExerciseListItem }) {
                             Примерно {exercise.duration_minutes} мин.
                         </p>
                     )}
+                    {(exercise.load_type || exercise.movement_pattern) && (
+                        <p className="text-muted-foreground">
+                            {[exercise.load_type, exercise.movement_pattern]
+                                .filter(Boolean)
+                                .join(' · ')}
+                        </p>
+                    )}
                 </div>
 
                 {exercise.tags.length > 0 && (

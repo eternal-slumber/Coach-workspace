@@ -49,6 +49,9 @@ test('a user can create a personal exercise', function () {
     $response->assertRedirect(route('exercises.show', $exercise));
     expect($exercise->user->is($user))->toBeTrue()
         ->and($exercise->is_system)->toBeFalse()
+        ->and($exercise->muscle_groups)->toBe(['legs', 'glutes', 'core'])
+        ->and($exercise->load_type)->toBe('strength')
+        ->and($exercise->movement_pattern)->toBe('squat')
         ->and($exercise->tags)->toBe(['офп', 'без инвентаря']);
 });
 
@@ -143,6 +146,8 @@ test('exercise data is validated', function () {
             'name' => '',
             'difficulty' => 'Невозможная',
             'duration_minutes' => 0,
+            'load_type' => 'impossible',
+            'movement_pattern' => 'impossible',
             'age_min' => 18,
             'age_max' => 10,
         ]))
@@ -150,6 +155,8 @@ test('exercise data is validated', function () {
             'name',
             'difficulty',
             'duration_minutes',
+            'load_type',
+            'movement_pattern',
             'age_max',
         ]);
 });
@@ -158,9 +165,16 @@ test('the exercise seeder creates an idempotent system library', function () {
     $this->seed(ExerciseSeeder::class);
     $this->seed(ExerciseSeeder::class);
 
-    expect(Exercise::query()->count())->toBe(25)
-        ->and(Exercise::query()->where('is_system', true)->count())->toBe(25)
-        ->and(Exercise::query()->whereNotNull('user_id')->count())->toBe(0);
+    $systemExercises = Exercise::query()->where('is_system', true)->get();
+
+    expect($systemExercises)->toHaveCount(45)
+        ->and(Exercise::query()->count())->toBe(45)
+        ->and(Exercise::query()->whereNotNull('user_id')->count())->toBe(0)
+        ->and($systemExercises->every(
+            fn (Exercise $exercise): bool => $exercise->muscle_groups !== []
+                && $exercise->load_type !== null
+                && $exercise->movement_pattern !== null,
+        ))->toBeTrue();
 });
 
 /**
@@ -176,6 +190,9 @@ function exercisePayload(array $overrides = []): array
         'difficulty' => 'Лёгкая',
         'equipment' => 'Без инвентаря',
         'duration_minutes' => 10,
+        'muscle_groups' => 'legs, glutes, core',
+        'load_type' => 'strength',
+        'movement_pattern' => 'squat',
         'contraindications' => null,
         'age_min' => 8,
         'age_max' => 65,

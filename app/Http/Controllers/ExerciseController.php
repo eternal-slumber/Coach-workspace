@@ -31,6 +31,8 @@ class ExerciseController extends Controller
                     'difficulty',
                     'equipment',
                     'duration_minutes',
+                    'load_type',
+                    'movement_pattern',
                     'tags',
                     'is_system',
                 ])
@@ -118,7 +120,7 @@ class ExerciseController extends Controller
      */
     private function exerciseData(Exercise $exercise): array
     {
-        return $exercise->only([
+        $exerciseData = $exercise->only([
             'id',
             'user_id',
             'name',
@@ -127,11 +129,18 @@ class ExerciseController extends Controller
             'difficulty',
             'equipment',
             'duration_minutes',
+            'muscle_groups',
+            'load_type',
+            'movement_pattern',
             'contraindications',
             'age_min',
             'age_max',
             'tags',
             'is_system',
         ]);
+
+        $exerciseData['muscle_groups'] = $exercise->muscle_groups ?? [];
+
+        return $exerciseData;
     }
 }

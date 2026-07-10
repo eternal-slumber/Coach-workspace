@@ -149,6 +149,25 @@
     min-height: 560px;
 }
 
+.coach-calendar:not(.coach-calendar-month) .df-calendar-content {
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.coach-calendar:not(.coach-calendar-month) .df-day-content-grid-inner,
+.coach-calendar:not(.coach-calendar-month) .df-week-time-grid-time-column,
+.coach-calendar:not(.coach-calendar-month) .df-week-time-grid-content,
+.coach-calendar:not(.coach-calendar-month) .df-week-time-grid-grid,
+.coach-calendar:not(.coach-calendar-month) .df-week-time-grid-grid-inner {
+    height: var(--coach-calendar-visible-height);
+}
+
+.coach-calendar:not(.coach-calendar-month) .df-day-content-grid-inner,
+.coach-calendar:not(.coach-calendar-month) .df-week-time-grid-time-column,
+.coach-calendar:not(.coach-calendar-month) .df-week-time-grid-grid-inner {
+    overflow: hidden;
+}
+
 .coach-calendar-month .df-calendar-container {
     height: min(860px, calc(100vh - 8rem));
     min-height: 640px;

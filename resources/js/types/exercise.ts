@@ -7,6 +7,9 @@ export type Exercise = {
     difficulty: string;
     equipment: string | null;
     duration_minutes: number | null;
+    muscle_groups: string[];
+    load_type: string | null;
+    movement_pattern: string | null;
     contraindications: string | null;
     age_min: number | null;
     age_max: number | null;
@@ -23,6 +26,8 @@ export type ExerciseListItem = Pick<
     | 'difficulty'
     | 'equipment'
     | 'duration_minutes'
+    | 'load_type'
+    | 'movement_pattern'
     | 'tags'
     | 'is_system'
 >;

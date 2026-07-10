@@ -77,6 +77,54 @@ export default function Profile() {
                                 />
                             </div>
 
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="working_day_starts_at">
+                                        Начало рабочего дня
+                                    </Label>
+
+                                    <Input
+                                        id="working_day_starts_at"
+                                        type="time"
+                                        defaultValue={formatTimeInput(
+                                            auth.user.working_day_starts_at,
+                                        )}
+                                        name="working_day_starts_at"
+                                        required
+                                    />
+
+                                    <InputError
+                                        message={errors.working_day_starts_at}
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="working_day_ends_at">
+                                        Конец рабочего дня
+                                    </Label>
+
+                                    <Input
+                                        id="working_day_ends_at"
+                                        type="time"
+                                        defaultValue={formatTimeInput(
+                                            auth.user.working_day_ends_at,
+                                        )}
+                                        name="working_day_ends_at"
+                                        required
+                                    />
+
+                                    <InputError
+                                        message={errors.working_day_ends_at}
+                                    />
+                                </div>
+                            </div>
+
+                            <p className="text-sm text-muted-foreground">
+                                Эти часы ограничивают видимый диапазон
+                                календаря, но не запрещают тренировки в другое
+                                время.
+                            </p>
+
                             <div className="flex items-center gap-4">
                                 <Button
                                     disabled={processing}
@@ -103,3 +151,7 @@ Profile.layout = {
         },
     ],
 };
+
+function formatTimeInput(value: string): string {
+    return value.slice(0, 5);
+}

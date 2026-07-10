@@ -109,9 +109,27 @@ export default function ExercisesShow({
                                 }
                             />
                             <Detail
+                                label="Тип нагрузки"
+                                value={exercise.load_type}
+                            />
+                            <Detail
+                                label="Двигательный паттерн"
+                                value={exercise.movement_pattern}
+                            />
+                            <Detail
                                 label="Возраст"
                                 value={ageRange(exercise)}
                             />
+                            <div className="grid gap-2 sm:col-span-2">
+                                <dt className="text-sm text-muted-foreground">
+                                    Группы мышц
+                                </dt>
+                                <dd>
+                                    {exercise.muscle_groups.length > 0
+                                        ? exercise.muscle_groups.join(', ')
+                                        : 'Не указано'}
+                                </dd>
+                            </div>
                             <div className="sm:col-span-2">
                                 <Detail
                                     label="Ограничения и противопоказания"

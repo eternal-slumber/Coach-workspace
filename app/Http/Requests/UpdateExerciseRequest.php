@@ -34,6 +34,10 @@ class UpdateExerciseRequest extends FormRequest
             'difficulty' => ['required', Rule::in(['Лёгкая', 'Средняя', 'Высокая'])],
             'equipment' => ['nullable', 'string', 'max:255'],
             'duration_minutes' => ['nullable', 'integer', 'between:1,480'],
+            'muscle_groups' => ['array', 'max:20'],
+            'muscle_groups.*' => ['string', 'max:50', 'distinct'],
+            'load_type' => ['nullable', Rule::in(Exercise::LOAD_TYPES)],
+            'movement_pattern' => ['nullable', Rule::in(Exercise::MOVEMENT_PATTERNS)],
             'contraindications' => ['nullable', 'string', 'max:5000'],
             'age_min' => ['nullable', 'integer', 'between:1,120'],
             'age_max' => ['nullable', 'integer', 'between:1,120', 'gte:age_min'],
@@ -46,6 +50,7 @@ class UpdateExerciseRequest extends FormRequest
     {
         $this->merge([
             'tags' => $this->parseTags($this->input('tags')),
+            'muscle_groups' => $this->parseTags($this->input('muscle_groups')),
         ]);
     }
 

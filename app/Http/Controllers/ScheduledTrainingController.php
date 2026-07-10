@@ -23,7 +23,11 @@ class ScheduledTrainingController extends Controller
 
         $scheduledTrainings = $request->user()
             ->scheduledTrainings()
-            ->with(['trainee:id,name', 'trainingGroup:id,name'])
+            ->with([
+                'trainee:id,name',
+                'trainingGroup:id,name',
+                'trainingPlan:id,scheduled_training_id,title,status',
+            ])
             ->where('starts_at', '>=', Date::now()->startOfDay())
             ->orderBy('starts_at')
             ->get()
@@ -58,7 +62,11 @@ class ScheduledTrainingController extends Controller
 
         return Inertia::render('scheduled-trainings/show', [
             'scheduledTraining' => $this->toPageData(
-                $scheduledTraining->load(['trainee:id,name', 'trainingGroup:id,name']),
+                $scheduledTraining->load([
+                    'trainee:id,name',
+                    'trainingGroup:id,name',
+                    'trainingPlan:id,scheduled_training_id,title,status',
+                ]),
             ),
         ]);
     }
@@ -113,7 +121,8 @@ class ScheduledTrainingController extends Controller
      *     location: string,
      *     status: string,
      *     color: string,
-     *     notes: string|null
+     *     notes: string|null,
+     *     training_plan: array{id: int, title: string, status: string}|null
      * }
      */
     private function toPageData(ScheduledTraining $scheduledTraining): array
@@ -134,6 +143,14 @@ class ScheduledTrainingController extends Controller
             'status' => $scheduledTraining->status,
             'color' => $scheduledTraining->color,
             'notes' => $scheduledTraining->notes,
+            'training_plan' => $scheduledTraining->relationLoaded('trainingPlan')
+                && $scheduledTraining->trainingPlan !== null
+                    ? [
+                        'id' => $scheduledTraining->trainingPlan->id,
+                        'title' => $scheduledTraining->trainingPlan->title,
+                        'status' => $scheduledTraining->trainingPlan->status,
+                    ]
+                    : null,
         ];
     }
 

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\ScheduledTraining;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -15,7 +17,8 @@ class DashboardController extends Controller
     {
         Gate::authorize('viewAny', ScheduledTraining::class);
 
-        $today = Date::now();
+        $today = Date::now()->startOfDay();
+        $endDate = $today->copy()->addDays(6)->endOfDay();
         $scheduledTrainings = $request->user()
             ->scheduledTrainings()
             ->select([
@@ -28,15 +31,101 @@ class DashboardController extends Controller
                 'status',
                 'color',
             ])
-            ->with(['trainee:id,name', 'trainingGroup:id,name'])
-            ->whereBetween('starts_at', [$today->startOfDay(), $today->endOfDay()])
+            ->with([
+                'trainee:id,name',
+                'trainingGroup:id,name',
+                'trainingPlan:id,scheduled_training_id,title,status',
+            ])
+            ->whereBetween('starts_at', [$today, $endDate])
             ->orderBy('starts_at')
             ->get()
             ->map($this->toDashboardItem(...));
 
         return Inertia::render('dashboard', [
+            'days' => $this->days($today, $scheduledTrainings),
             'scheduledTrainings' => $scheduledTrainings,
         ]);
+    }
+
+    /**
+     * @param  Collection<int, array{
+     *     id: int,
+     *     starts_at: string,
+     *     ends_at: string,
+     *     subject_name: string,
+     *     subject_type: 'trainee'|'training_group',
+     *     location: string,
+     *     status: string,
+     *     color: string,
+     *     training_plan: array{id: int, title: string, status: string}|null
+     * }>  $scheduledTrainings
+     * @return array<int, array{
+     *     date: string,
+     *     title: string,
+     *     scheduled_trainings: array<int, array{
+     *         id: int,
+     *         starts_at: string,
+     *         ends_at: string,
+     *         subject_name: string,
+     *         subject_type: 'trainee'|'training_group',
+     *         location: string,
+     *         status: string,
+     *         color: string,
+     *         training_plan: array{id: int, title: string, status: string}|null
+     *     }>
+     * }>
+     */
+    private function days(CarbonInterface $startDate, Collection $scheduledTrainings): array
+    {
+        $scheduledTrainingsByDate = $scheduledTrainings->groupBy(
+            fn (array $scheduledTraining): string => Date::parse($scheduledTraining['starts_at'])
+                ->toDateString(),
+        );
+
+        return collect(range(0, 6))
+            ->map(function (int $offset) use ($startDate, $scheduledTrainingsByDate): array {
+                $date = $startDate->copy()->addDays($offset);
+                $dateKey = $date->toDateString();
+
+                return [
+                    'date' => $dateKey,
+                    'title' => $this->dayTitle($date, $offset),
+                    'scheduled_trainings' => $scheduledTrainingsByDate
+                        ->get($dateKey, collect())
+                        ->values()
+                        ->all(),
+                ];
+            })
+            ->all();
+    }
+
+    private function dayTitle(CarbonInterface $date, int $offset): string
+    {
+        return match ($offset) {
+            0 => 'Сегодня, '.$this->formatDayAndMonth($date),
+            1 => 'Завтра, '.$this->formatDayAndMonth($date),
+            default => $this->formatDayAndMonth($date),
+        };
+    }
+
+    private function formatDayAndMonth(CarbonInterface $date): string
+    {
+        $months = [
+            1 => 'января',
+            2 => 'февраля',
+            3 => 'марта',
+            4 => 'апреля',
+            5 => 'мая',
+            6 => 'июня',
+            7 => 'июля',
+            8 => 'августа',
+            9 => 'сентября',
+            10 => 'октября',
+            11 => 'ноября',
+            12 => 'декабря',
+        ];
+
+        return $date->day.' '.$months[$date->month];
     }
 
     /**
@@ -48,7 +137,8 @@ class DashboardController extends Controller
      *     subject_type: 'trainee'|'training_group',
      *     location: string,
      *     status: string,
-     *     color: string
+     *     color: string,
+     *     training_plan: array{id: int, title: string, status: string}|null
      * }
      */
     private function toDashboardItem(ScheduledTraining $scheduledTraining): array
@@ -67,6 +157,14 @@ class DashboardController extends Controller
             'location' => $scheduledTraining->location,
             'status' => $scheduledTraining->status,
             'color' => $scheduledTraining->color,
+            'training_plan' => $scheduledTraining->relationLoaded('trainingPlan')
+                && $scheduledTraining->trainingPlan !== null
+                    ? [
+                        'id' => $scheduledTraining->trainingPlan->id,
+                        'title' => $scheduledTraining->trainingPlan->title,
+                        'status' => $scheduledTraining->trainingPlan->status,
+                    ]
+                    : null,
         ];
     }
 }

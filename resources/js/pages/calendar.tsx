@@ -13,6 +13,7 @@ import {
 import type { Event } from '@dayflow/react';
 import { Head, Link, router, useHttp } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import CalendarDayDialog from '@/components/calendar-day-dialog';
@@ -30,6 +31,10 @@ import type { CalendarScheduledTraining } from '@/types';
 
 type CalendarPageProps = {
     scheduledTrainings: CalendarScheduledTraining[];
+    workingHours: {
+        startsAt: string;
+        endsAt: string;
+    };
 };
 
 type ScheduleUpdate = {
@@ -37,8 +42,11 @@ type ScheduleUpdate = {
     ends_at: string;
 };
 
+const calendarHourHeight = 72;
+
 export default function CalendarPage({
     scheduledTrainings,
+    workingHours,
 }: CalendarPageProps) {
     const { resolvedAppearance } = useAppearance();
     const [selectedTraining, setSelectedTraining] =
@@ -49,6 +57,9 @@ export default function CalendarPage({
         ends_at: '',
     });
     const events = scheduledTrainings.map(toDayFlowEvent);
+    const { firstHour, lastHour, visibleHourSlots } =
+        getWorkingHourRange(workingHours);
+    const visibleRangeHeight = calendarHourHeight * visibleHourSlots + 12;
     const eventsVersion = scheduledTrainings
         .map(({ id, starts_at, ends_at }) => `${id}:${starts_at}:${ends_at}`)
         .join('|');
@@ -93,8 +104,15 @@ export default function CalendarPage({
     const dayFlowCalendar = useCalendarApp(
         {
             views: [
-                createDayView(),
+                createDayView({
+                    firstHour,
+                    lastHour,
+                    hourHeight: calendarHourHeight,
+                }),
                 createWeekView({
+                    firstHour,
+                    lastHour,
+                    hourHeight: calendarHourHeight,
                     gridDateClick: 'none',
                     gridDateDoubleClick: 'none',
                 }),
@@ -130,7 +148,7 @@ export default function CalendarPage({
             useEventDetailDialog: false,
             useEventDetailPanel: false,
         },
-        `${eventsVersion}:${resolvedAppearance}`,
+        `${eventsVersion}:${resolvedAppearance}:${firstHour}:${lastHour}`,
     );
 
     return (
@@ -157,6 +175,11 @@ export default function CalendarPage({
                             ? 'coach-calendar-month'
                             : ''
                     }`}
+                    style={
+                        {
+                            '--coach-calendar-visible-height': `${visibleRangeHeight}px`,
+                        } as CSSProperties
+                    }
                     aria-label="Календарь тренировок"
                 >
                     <DayFlowCalendar calendar={dayFlowCalendar} />
@@ -212,6 +235,43 @@ function toDayFlowEvent(scheduledTraining: CalendarScheduledTraining): Event {
             type: scheduledTraining.subject_type,
         },
     });
+}
+
+function timeToDecimalHour(time: string): number {
+    const [hours = 0, minutes = 0] = time.split(':').map(Number);
+
+    return hours + minutes / 60;
+}
+
+function getWorkingHourRange(
+    workingHours: CalendarPageProps['workingHours'],
+): {
+    firstHour: number;
+    lastHour: number;
+    visibleHourSlots: number;
+} {
+    const firstHour = clampHour(timeToDecimalHour(workingHours.startsAt), 0, 23);
+    const requestedLastHour = clampHour(
+        timeToDecimalHour(workingHours.endsAt),
+        firstHour + 1,
+        24,
+    );
+    const lastHour =
+        requestedLastHour > firstHour ? requestedLastHour : firstHour + 1;
+
+    return {
+        firstHour,
+        lastHour,
+        visibleHourSlots: Math.min(24, lastHour + 1) - firstHour,
+    };
+}
+
+function clampHour(hour: number, min: number, max: number): number {
+    if (!Number.isFinite(hour)) {
+        return min;
+    }
+
+    return Math.min(max, Math.max(min, hour));
 }
 
 function reloadCalendarAfterFailure(): void {

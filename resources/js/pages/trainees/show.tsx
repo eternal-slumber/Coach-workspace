@@ -1,14 +1,18 @@
 import { Head, Link } from '@inertiajs/react';
 import { Pencil } from 'lucide-react';
 import TraineeController from '@/actions/App/Http/Controllers/TraineeController';
+import AgentMemorySection from '@/components/agent-memory-section';
 import ResourceDeleteDialog from '@/components/resource-delete-dialog';
+import TrainingHistoryList from '@/components/training-history-list';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { edit, index } from '@/routes/trainees';
-import type { Trainee } from '@/types';
+import type { AgentMemory, Trainee, TrainingHistoryItem } from '@/types';
 
 type TraineesShowProps = {
     trainee: Trainee;
+    trainingHistory: TrainingHistoryItem[];
+    agentMemories: AgentMemory[];
 };
 
 function Detail({
@@ -26,7 +30,11 @@ function Detail({
     );
 }
 
-export default function TraineesShow({ trainee }: TraineesShowProps) {
+export default function TraineesShow({
+    trainee,
+    trainingHistory,
+    agentMemories,
+}: TraineesShowProps) {
     return (
         <>
             <Head title={trainee.name} />
@@ -75,6 +83,17 @@ export default function TraineesShow({ trainee }: TraineesShowProps) {
                         </dl>
                     </CardContent>
                 </Card>
+
+                <AgentMemorySection
+                    subject={{
+                        id: trainee.id,
+                        name: trainee.name,
+                        type: 'trainee',
+                    }}
+                    agentMemories={agentMemories}
+                />
+
+                <TrainingHistoryList trainingHistory={trainingHistory} />
             </main>
         </>
     );

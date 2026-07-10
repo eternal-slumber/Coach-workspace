@@ -1,14 +1,18 @@
 import { Head, Link } from '@inertiajs/react';
 import { Pencil } from 'lucide-react';
 import TrainingGroupController from '@/actions/App/Http/Controllers/TrainingGroupController';
+import AgentMemorySection from '@/components/agent-memory-section';
 import ResourceDeleteDialog from '@/components/resource-delete-dialog';
+import TrainingHistoryList from '@/components/training-history-list';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { edit, index } from '@/routes/training-groups';
-import type { TrainingGroup } from '@/types';
+import type { AgentMemory, TrainingGroup, TrainingHistoryItem } from '@/types';
 
 type TrainingGroupsShowProps = {
     trainingGroup: TrainingGroup;
+    trainingHistory: TrainingHistoryItem[];
+    agentMemories: AgentMemory[];
 };
 
 function Detail({ label, value }: { label: string; value: string | null }) {
@@ -22,6 +26,8 @@ function Detail({ label, value }: { label: string; value: string | null }) {
 
 export default function TrainingGroupsShow({
     trainingGroup,
+    trainingHistory,
+    agentMemories,
 }: TrainingGroupsShowProps) {
     return (
         <>
@@ -89,6 +95,17 @@ export default function TrainingGroupsShow({
                         </dl>
                     </CardContent>
                 </Card>
+
+                <AgentMemorySection
+                    subject={{
+                        id: trainingGroup.id,
+                        name: trainingGroup.name,
+                        type: 'training_group',
+                    }}
+                    agentMemories={agentMemories}
+                />
+
+                <TrainingHistoryList trainingHistory={trainingHistory} />
             </main>
         </>
     );

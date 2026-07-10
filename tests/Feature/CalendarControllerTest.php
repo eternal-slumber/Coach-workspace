@@ -26,7 +26,10 @@ test('guests cannot access the calendar or reschedule trainings', function () {
 test('the calendar contains only the current users trainings', function () {
     $this->withoutVite();
 
-    $user = User::factory()->create();
+    $user = User::factory()->create([
+        'working_day_starts_at' => '07:30',
+        'working_day_ends_at' => '21:30',
+    ]);
     $otherUser = User::factory()->create();
     $trainee = $user->trainees()->create(calendarTraineePayload(['name' => 'Свой клиент']));
     $otherTrainee = $otherUser->trainees()->create(calendarTraineePayload(['name' => 'Чужой клиент']));
@@ -35,6 +38,8 @@ test('the calendar contains only the current users trainings', function () {
         calendarTrainingPayload([
             'trainee_id' => $trainee->id,
             'color' => 'green',
+            'starts_at' => '2026-07-07T23:00:00+03:00',
+            'ends_at' => '2026-07-07T23:45:00+03:00',
         ]),
     );
     $otherUser->scheduledTrainings()->create(
@@ -51,7 +56,10 @@ test('the calendar contains only the current users trainings', function () {
             ->where('scheduledTrainings.0.title', 'Свой клиент')
             ->where('scheduledTrainings.0.location', 'Зал №2')
             ->where('scheduledTrainings.0.color', 'green')
-            ->where('scheduledTrainings.0.subject_type', 'trainee'));
+            ->where('scheduledTrainings.0.subject_type', 'trainee')
+            ->where('scheduledTrainings.0.starts_at', $scheduledTraining->starts_at->toIso8601String())
+            ->where('workingHours.startsAt', '07:30')
+            ->where('workingHours.endsAt', '21:30'));
 });
 
 test('a user can reschedule their training from the calendar', function () {
