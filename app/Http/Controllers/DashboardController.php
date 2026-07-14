@@ -11,6 +11,19 @@ use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * @phpstan-type DashboardItem array{
+ *     id: int,
+ *     starts_at: string,
+ *     ends_at: string,
+ *     subject_name: string,
+ *     subject_type: string,
+ *     location: string,
+ *     status: string,
+ *     color: string,
+ *     training_plan: array{id: int, title: string, status: string}|null
+ * }
+ */
 class DashboardController extends Controller
 {
     public function index(Request $request): Response
@@ -48,31 +61,11 @@ class DashboardController extends Controller
     }
 
     /**
-     * @param  Collection<int, array{
-     *     id: int,
-     *     starts_at: string,
-     *     ends_at: string,
-     *     subject_name: string,
-     *     subject_type: 'trainee'|'training_group',
-     *     location: string,
-     *     status: string,
-     *     color: string,
-     *     training_plan: array{id: int, title: string, status: string}|null
-     * }>  $scheduledTrainings
+     * @param  Collection<int, covariant DashboardItem>  $scheduledTrainings
      * @return array<int, array{
      *     date: string,
      *     title: string,
-     *     scheduled_trainings: array<int, array{
-     *         id: int,
-     *         starts_at: string,
-     *         ends_at: string,
-     *         subject_name: string,
-     *         subject_type: 'trainee'|'training_group',
-     *         location: string,
-     *         status: string,
-     *         color: string,
-     *         training_plan: array{id: int, title: string, status: string}|null
-     *     }>
+     *     scheduled_trainings: list<DashboardItem>
      * }>
      */
     private function days(CarbonInterface $startDate, Collection $scheduledTrainings): array
@@ -90,10 +83,10 @@ class DashboardController extends Controller
                 return [
                     'date' => $dateKey,
                     'title' => $this->dayTitle($date, $offset),
-                    'scheduled_trainings' => $scheduledTrainingsByDate
+                    'scheduled_trainings' => array_values($scheduledTrainingsByDate
                         ->get($dateKey, collect())
                         ->values()
-                        ->all(),
+                        ->all()),
                 ];
             })
             ->all();
@@ -128,19 +121,7 @@ class DashboardController extends Controller
         return $date->day.' '.$months[$date->month];
     }
 
-    /**
-     * @return array{
-     *     id: int,
-     *     starts_at: string,
-     *     ends_at: string,
-     *     subject_name: string,
-     *     subject_type: 'trainee'|'training_group',
-     *     location: string,
-     *     status: string,
-     *     color: string,
-     *     training_plan: array{id: int, title: string, status: string}|null
-     * }
-     */
+    /** @return DashboardItem */
     private function toDashboardItem(ScheduledTraining $scheduledTraining): array
     {
         $isTraineeTraining = $scheduledTraining->trainee_id !== null;

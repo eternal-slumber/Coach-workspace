@@ -104,7 +104,13 @@ abstract class TrainingPlanRequest extends FormRequest
     /** @return list<int> */
     private function requestedExerciseIds(): array
     {
-        return collect($this->input('blocks', []))
+        $blocks = $this->input('blocks', []);
+
+        if (! is_array($blocks)) {
+            return [];
+        }
+
+        return array_values(collect($blocks)
             ->filter(fn (mixed $block): bool => is_array($block))
             ->flatMap(fn (array $block): array => $block['exercises'] ?? [])
             ->pluck('exercise_id')
@@ -112,6 +118,6 @@ abstract class TrainingPlanRequest extends FormRequest
             ->map(fn (mixed $exerciseId): int => (int) $exerciseId)
             ->unique()
             ->values()
-            ->all();
+            ->all());
     }
 }

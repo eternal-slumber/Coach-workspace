@@ -108,7 +108,7 @@ class TrainingGroupController extends Controller
         return to_route('training-groups.index');
     }
 
-    /** @return Collection<int, array<string, mixed>> */
+    /** @return Collection<int, covariant array<string, mixed>> */
     private function trainingHistory(TrainingGroup $trainingGroup): Collection
     {
         return $trainingGroup->trainingPlans()

@@ -106,7 +106,7 @@ class TraineeController extends Controller
         return to_route('trainees.index');
     }
 
-    /** @return Collection<int, array<string, mixed>> */
+    /** @return Collection<int, covariant array<string, mixed>> */
     private function trainingHistory(Trainee $trainee): Collection
     {
         return $trainee->trainingPlans()

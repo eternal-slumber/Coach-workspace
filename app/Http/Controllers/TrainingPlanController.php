@@ -70,7 +70,7 @@ class TrainingPlanController extends Controller
         $attributes = $request->validated();
         $scheduledTraining = $request->user()
             ->scheduledTrainings()
-            ->findOrFail($attributes['scheduled_training_id']);
+            ->findOrFail((int) $attributes['scheduled_training_id']);
 
         $trainingPlan = $this->saveTrainingPlan->create(
             $request->user(),
@@ -138,8 +138,8 @@ class TrainingPlanController extends Controller
 
     /**
      * @return array{
-     *     scheduledTrainings: Collection<int, array<string, mixed>>,
-     *     exercises: Collection<int, array<string, mixed>>
+     *     scheduledTrainings: Collection<int, covariant array<string, mixed>>,
+     *     exercises: Collection<int, covariant array<string, mixed>>
      * }
      */
     private function formOptions(Request $request): array
@@ -164,7 +164,7 @@ class TrainingPlanController extends Controller
         ];
     }
 
-    /** @return Collection<int, array<string, mixed>> */
+    /** @return Collection<int, covariant array<string, mixed>> */
     private function exerciseOptions(Request $request): Collection
     {
         return Exercise::query()
@@ -256,7 +256,7 @@ class TrainingPlanController extends Controller
                     'rest_seconds',
                     'position',
                     'notes',
-                ])),
+                ]))->all(),
             ]),
             'training_note' => $trainingPlan->trainingNote?->only([
                 'id',
